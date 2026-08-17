@@ -1,0 +1,23 @@
+name: 'dbt_cloud_practice'
+version: '1.0.0'
+
+# In dbt Cloud this is ignored -- the connection you configured in the UI wins.
+# It only matters if you ever run this project locally with a profiles.yml.
+profile: 'default'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  dbt_cloud_practice:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

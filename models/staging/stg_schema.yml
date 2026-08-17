@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_listings
+    description: "One row per Airbnb listing, straight off the raw table with columns renamed."
+    columns:
+      - name: listing_id
+        description: "Primary key of the listing."
+        data_tests:
+          - unique
+          - not_null
+      - name: host_id
+        data_tests:
+          - not_null
+
+  - name: stg_hosts
+    description: "One row per host, renamed from raw."
+    columns:
+      - name: host_id
+        description: "Primary key of the host."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_reviews
+    description: "One row per review, renamed from raw."
+    columns:
+      - name: listing_id
+        data_tests:
+          - not_null
