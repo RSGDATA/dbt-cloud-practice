@@ -1,68 +1,52 @@
 # dbt-cloud-practice
 
-A sandbox dbt project for rehearsing the dbt Cloud workflow: build a model on a feature
-branch in the Cloud IDE, then promote it `dev → test → prod` through pull requests.
+Sandbox for rehearsing the dbt Cloud workflow: build on a feature branch in the Studio IDE,
+then promote `dev → test → prod` through pull requests.
 
-Reads the same raw data as the Bootcamp course (`AIRBNB.RAW`), but is deliberately kept
-separate so practice merges never touch coursework history.
+## Layers
+
+Each layer may only reach back one step. That rule is what makes the DAG readable.
+
+| Layer | Reads from | Job | Materialized |
+|---|---|---|---|
+| `bronze/` | `source()` — the **only** layer allowed to | Land raw, dedup to latest as-of date | view |
+| `silver/` | `ref()` on bronze | Rename, cast, clean | view |
+| `gold/` | `ref()` on silver | Business models (dim / fct) | table |
+
+## Layers × environments
+
+The same code produces one set of schemas per environment. dbt prefixes each layer's
+custom schema with the environment's schema:
+
+| | bronze | silver | gold |
+|---|---|---|---|
+| **Development** | `DEV_bronze` | `DEV_silver` | `DEV_gold` |
+| **Staging** | `TEST_bronze` | `TEST_silver` | `TEST_gold` |
+| **Production** | `PROD_bronze` | `PROD_silver` | `PROD_gold` |
+
+You never write a dev, test or prod version of a model. There is one model. The environment
+decides where it lands.
 
 ## Branches
 
-There is no `main`. Three long-lived branches, one per environment:
+No `main`. Three long-lived branches, one per environment:
 
-| Branch | dbt Cloud environment | Snowflake schema | How code gets here |
-|---|---|---|---|
-| `dev`  | Development (the IDE) | `DEV`  | PR from a `feature/*` branch |
-| `test` | Staging (deployment)  | `TEST` | PR from `dev` |
-| `prod` | Production (deployment) | `PROD` | PR from `test` |
+| Branch | Environment | Gets code via |
+|---|---|---|
+| `dev` | Development (the IDE) | PR from a `feature/*` branch |
+| `test` | Staging | PR from `dev` |
+| `prod` | Production | PR from `test` |
 
-`dev` is the repo default branch, so a PR opened from a feature branch targets it
-automatically. `test` and `prod` require a pull request to merge — no direct pushes.
+`dev` is the repo default, so feature PRs target it automatically. `test` and `prod` require
+a pull request — no direct pushes.
 
-## The promotion loop
-
-```
-feature/my-model ──► dev ──► test ──► prod
-     (Cloud IDE)      (PR)    (PR)     (PR)
-```
-
-1. In the Cloud IDE, check out `dev`, then **Create branch** → `feature/my-model`.
-2. Write the model. Use **Preview** to see rows, **Compile** to see the rendered SQL.
-3. Run it: `dbt run --select my_model`, then `dbt test --select my_model`.
-4. **Commit and sync** → commits and pushes the branch.
-5. **Create pull request** → opens GitHub with base `dev`. Review the diff, merge.
-6. Back in the IDE, check out `dev` and **Pull from remote**.
-7. Promote: open a PR `dev → test`, merge, watch the Staging job build into `TEST`.
-8. Promote again: PR `test → prod`, merge, watch the Production job build into `PROD`.
-
-The thing worth internalising: a deployment environment is **pinned to one branch** via its
-*custom branch* setting. That pin is the entire reason merging into `test` changes what the
-Staging job builds. The code is identical at each tier — only the target schema differs.
-
-## Layout
-
-```
-dbt_project.yml          project config, materialization defaults
-models/
-  sources.yml            points at AIRBNB.RAW (same in every environment)
-  staging/               views: rename and lightly clean raw columns
-    stg_listings.sql
-    stg_hosts.sql
-    stg_reviews.sql
-  marts/                 tables: business-facing models
-    dim_listings.sql
-    fct_reviews.sql
-```
-
-The dbt project lives at the **repo root**, so the dbt Cloud project subdirectory setting
-should be left **blank**.
-
-## Useful commands in the IDE command bar
+## Commands
 
 ```bash
-dbt debug                        # confirm the warehouse connection
-dbt build                        # run + test everything
-dbt run  --select stg_listings   # one model
-dbt build --select +dim_listings # a model and everything it depends on
-dbt test --select dim_listings
+dbt build                       # everything
+dbt build --select bronze       # one layer
+dbt build --select +dim_listings # a model and all its upstreams
+dbt build --select sl_listings+  # a model and all its downstreams
 ```
+
+The dbt project is at the **repo root** — leave dbt Cloud's project subdirectory blank.
