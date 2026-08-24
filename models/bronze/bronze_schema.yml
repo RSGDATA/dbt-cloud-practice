@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: br_listings
+    description: "Raw listings, deduplicated to the latest updated_at per id."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]
+
+  - name: br_hosts
+    description: "Raw hosts, deduplicated to the latest updated_at per id."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]
+
+  - name: br_reviews
+    description: "Raw reviews, deduplicated on listing_id + reviewer_name + date."
+    columns:
+      - name: listing_id
+        data_tests: [not_null]
