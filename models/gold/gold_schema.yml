@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: dim_listings
+    description: "One row per listing, enriched with its host."
+    columns:
+      - name: listing_id
+        data_tests: [unique, not_null]
+      - name: host_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_hosts')
+                field: host_id
+
+  - name: dim_hosts
+    description: "One row per host."
+    columns:
+      - name: host_id
+        data_tests: [unique, not_null]
+
+  - name: fct_reviews
+    description: "One row per review."
+    columns:
+      - name: listing_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_listings')
+                field: listing_id

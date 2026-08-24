@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: sl_listings
+    description: "Listings with business names, price cast to number, minimum_nights floored at 1."
+    columns:
+      - name: listing_id
+        data_tests: [unique, not_null]
+      - name: host_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_hosts')
+                field: host_id
+      - name: room_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Entire home/apt'
+                  - 'Private room'
+                  - 'Shared room'
+                  - 'Hotel room'
+
+  - name: sl_hosts
+    description: "Hosts with a non-null name and a boolean superhost flag."
+    columns:
+      - name: host_id
+        data_tests: [unique, not_null]
+      - name: host_name
+        data_tests: [not_null]
+
+  - name: sl_reviews
+    description: "Reviews with business names, empty review text dropped."
+    columns:
+      - name: listing_id
+        data_tests: [not_null]
+      - name: review_sentiment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['positive', 'neutral', 'negative']

@@ -1,5 +1,5 @@
 with reviews as (
-    select * from {{ ref('stg_reviews') }}
+    select * from {{ ref('sl_reviews') }}
 )
 
 select
@@ -9,4 +9,3 @@ select
     review_text,
     review_sentiment
 from reviews
-where review_text is not null

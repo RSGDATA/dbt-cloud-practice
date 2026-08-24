@@ -1,8 +1,7 @@
 name: 'dbt_cloud_practice'
 version: '1.0.0'
 
-# In dbt Cloud this is ignored -- the connection you configured in the UI wins.
-# It only matters if you ever run this project locally with a profiles.yml.
+# Ignored in dbt Cloud -- the connection configured in the UI wins.
 profile: 'default'
 
 model-paths: ["models"]
@@ -15,9 +14,16 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Each layer writes to its own schema. dbt prefixes these with the environment's
+# schema, so the same code produces DEV_bronze / TEST_bronze / PROD_bronze etc.
 models:
   dbt_cloud_practice:
-    staging:
+    bronze:
       +materialized: view
-    marts:
+      +schema: bronze
+    silver:
+      +materialized: view
+      +schema: silver
+    gold:
       +materialized: table
+      +schema: gold
